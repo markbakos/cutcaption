@@ -8,11 +8,12 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
 from cutcaption import __version__
 from cutcaption.config import CutcapConfig, load_config, write_default_config
-from cutcaption.doctor import run_doctor_checks
+from cutcaption.doctor import DoctorCheck, has_critical_failures, run_doctor_checks
 from cutcaption.models import VideoJob
 from cutcaption.pipeline import CaptionPipeline
 from cutcaption.styles import STYLES
@@ -107,20 +108,34 @@ def caption(
 def doctor() -> None:
     """Check local tools and Python dependencies."""
 
-    table = Table(title="cutcaption doctor")
+    checks = run_doctor_checks()
+    table = Table(title="cutcaption doctor", show_lines=True)
     table.add_column("Check")
     table.add_column("Status")
     table.add_column("Detail")
-    failed = False
-    for check in run_doctor_checks():
-        failed = failed or not check.ok
+
+    for check in checks:
         table.add_row(
             check.name,
-            "[green]ok[/green]" if check.ok else "[red]missing[/red]",
+            _doctor_status(check),
             check.message,
         )
+
+    console.print(
+        Panel(
+            "ffmpeg is required for burned-in captioned videos. "
+            "Transcription and subtitle export may still work without it.",
+            title="Video rendering",
+            border_style="cyan",
+        )
+    )
     console.print(table)
-    if failed:
+
+    hints = _doctor_hints(checks)
+    if hints:
+        console.print(Panel("\n\n".join(hints), title="Actionable fixes", border_style="yellow"))
+
+    if has_critical_failures(checks):
         raise typer.Exit(code=1)
 
 
@@ -192,6 +207,22 @@ def _apply_cli_overrides(
 
 def _without_none(values: dict[str, object | None]) -> dict[str, object]:
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _doctor_status(check: DoctorCheck) -> str:
+    if check.ok:
+        return "[green]✓ ok[/green]"
+    if check.critical:
+        return "[red]✗ missing[/red]"
+    return "[yellow]optional[/yellow]"
+
+
+def _doctor_hints(checks: list[DoctorCheck]) -> list[str]:
+    hints: list[str] = []
+    for check in checks:
+        if not check.ok and check.hint and check.hint not in hints:
+            hints.append(check.hint)
+    return hints
 
 
 def _print_planned_jobs(jobs: list[VideoJob]) -> None:
