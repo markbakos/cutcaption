@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Annotated
 
@@ -10,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 from cutcaption import __version__
-from cutcaption.config import CutcaptionConfig
+from cutcaption.config import CutcapConfig, load_config, write_default_config
 from cutcaption.doctor import run_doctor_checks
 from cutcaption.pipeline import CaptionPipeline
 from cutcaption.styles import STYLES
@@ -35,27 +36,34 @@ def caption(
         Path | None,
         typer.Argument(help="Video file or folder to caption."),
     ] = None,
-    preset: Annotated[str, typer.Option("--preset", help="Caption preset.")] = "shorts",
-    style: Annotated[str, typer.Option("--style", help="Caption style preset.")] = "clean",
-    model: Annotated[str, typer.Option("--model", help="faster-whisper model name.")] = "small",
+    config_path: Annotated[
+        Path | None,
+        typer.Option("--config", help="Path to a cutcaption TOML config file."),
+    ] = None,
+    preset: Annotated[str | None, typer.Option("--preset", help="Caption preset.")] = None,
+    style: Annotated[str | None, typer.Option("--style", help="Caption style preset.")] = None,
+    model: Annotated[
+        str | None,
+        typer.Option("--model", help="faster-whisper model name."),
+    ] = None,
     mode: Annotated[
-        str,
+        str | None,
         typer.Option("--mode", help="Processing mode: fast, balanced, accurate."),
-    ] = "balanced",
+    ] = None,
     language: Annotated[
         str | None,
         typer.Option("--language", help="Language code, or omit for auto detection."),
     ] = None,
     output: Annotated[Path | None, typer.Option("--output", "-o", help="Output directory.")] = None,
-    srt: Annotated[bool, typer.Option("--srt/--no-srt", help="Write SRT subtitles.")] = True,
+    srt: Annotated[bool | None, typer.Option("--srt/--no-srt", help="Write SRT subtitles.")] = None,
     ass: Annotated[
-        bool,
+        bool | None,
         typer.Option("--ass/--no-ass", help="Write ASS subtitles."),
-    ] = False,
+    ] = None,
     burn: Annotated[
-        bool,
+        bool | None,
         typer.Option("--burn/--no-burn", help="Render burned-in captioned MP4."),
-    ] = True,
+    ] = None,
     version: Annotated[
         bool,
         typer.Option("--version", callback=version_callback, is_eager=True),
@@ -69,15 +77,16 @@ def caption(
         raise typer.Exit()
 
     try:
-        config = CutcaptionConfig(
+        config = _apply_cli_overrides(
+            load_config(config_path),
             preset=preset,
             style=style,
             model=model,
             mode=mode,
             language=language,
             output=output,
-            write_srt=srt,
-            write_ass=ass,
+            srt=srt,
+            ass=ass,
             burn=burn,
         )
         results = CaptionPipeline().run(input_path, config)
@@ -131,10 +140,7 @@ def init() -> None:
     if config_path.exists():
         console.print("[yellow]cutcaption.toml already exists.[/yellow]")
         raise typer.Exit(code=1)
-    config_path.write_text(
-        'preset = "shorts"\nstyle = "clean"\nmodel = "small"\nmode = "balanced"\n',
-        encoding="utf-8",
-    )
+    write_default_config(config_path)
     console.print("[green]Created cutcaption.toml[/green]")
 
 
@@ -147,3 +153,35 @@ def preview() -> None:
 
 def main() -> None:
     app()
+
+
+def _apply_cli_overrides(
+    config: CutcapConfig,
+    *,
+    preset: str | None,
+    style: str | None,
+    model: str | None,
+    mode: str | None,
+    language: str | None,
+    output: Path | None,
+    srt: bool | None,
+    ass: bool | None,
+    burn: bool | None,
+) -> CutcapConfig:
+    transcription = replace(
+        config.transcription,
+        **_without_none({"model": model, "mode": mode, "language": language}),
+    )
+    caption = replace(config.caption, **_without_none({"preset": preset, "style": style}))
+    render = replace(config.render, **_without_none({"srt": srt, "ass": ass, "burn": burn}))
+    return CutcapConfig(
+        transcription=transcription,
+        caption=caption,
+        render=render,
+        batch=config.batch,
+        output=output if output is not None else config.output,
+    )
+
+
+def _without_none(values: dict[str, object | None]) -> dict[str, object]:
+    return {key: value for key, value in values.items() if value is not None}

@@ -38,7 +38,10 @@ class CaptionPipeline:
         for job in self.plan(input_path, config):
             job.srt_path.parent.mkdir(parents=True, exist_ok=True)
             transcript = self._transcriber.transcribe(job.source, config)
-            captions = chunk_words(transcript.words)
+            captions = chunk_words(
+                transcript.words,
+                max_words=config.caption.max_words,
+            )
             style = get_style(config.style)
 
             wrote_srt = False

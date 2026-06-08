@@ -18,7 +18,11 @@ class FasterWhisperTranscriber:
                 "Install cutcaption with its runtime dependencies."
             ) from exc
 
-        model = WhisperModel(config.model, device="cpu", compute_type=_compute_type(config.mode))
+        model = WhisperModel(
+            config.model,
+            device=_device(config.device),
+            compute_type=_compute_type(config.mode, config.compute_type),
+        )
         segments, info = model.transcribe(
             str(video_path),
             language=config.language,
@@ -36,7 +40,15 @@ class FasterWhisperTranscriber:
         return Transcript(words=tuple(words), language=getattr(info, "language", None))
 
 
-def _compute_type(mode: str) -> str:
+def _device(device: str) -> str:
+    if device == "auto":
+        return "cpu"
+    return device
+
+
+def _compute_type(mode: str, compute_type: str) -> str:
+    if compute_type != "auto":
+        return compute_type
     if mode == "accurate":
         return "float32"
     return "int8"
