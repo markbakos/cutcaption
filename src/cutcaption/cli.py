@@ -13,6 +13,7 @@ from rich.table import Table
 from cutcaption import __version__
 from cutcaption.config import CutcapConfig, load_config, write_default_config
 from cutcaption.doctor import run_doctor_checks
+from cutcaption.models import VideoJob
 from cutcaption.pipeline import CaptionPipeline
 from cutcaption.styles import STYLES
 
@@ -64,6 +65,10 @@ def caption(
         bool | None,
         typer.Option("--burn/--no-burn", help="Render burned-in captioned MP4."),
     ] = None,
+    recursive: Annotated[
+        bool | None,
+        typer.Option("--recursive/--no-recursive", help="Search folders recursively."),
+    ] = None,
     version: Annotated[
         bool,
         typer.Option("--version", callback=version_callback, is_eager=True),
@@ -88,14 +93,14 @@ def caption(
             srt=srt,
             ass=ass,
             burn=burn,
+            recursive=recursive,
         )
-        results = CaptionPipeline().run(input_path, config)
+        jobs = CaptionPipeline().plan(input_path, config)
     except Exception as exc:
         console.print(f"[bold red]Error:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc
 
-    for result in results:
-        console.print(f"[green]Done[/green] {result.job.source.name}")
+    _print_planned_jobs(jobs)
 
 
 @app.command()
@@ -167,6 +172,7 @@ def _apply_cli_overrides(
     srt: bool | None,
     ass: bool | None,
     burn: bool | None,
+    recursive: bool | None,
 ) -> CutcapConfig:
     transcription = replace(
         config.transcription,
@@ -174,14 +180,35 @@ def _apply_cli_overrides(
     )
     caption = replace(config.caption, **_without_none({"preset": preset, "style": style}))
     render = replace(config.render, **_without_none({"srt": srt, "ass": ass, "burn": burn}))
+    batch = replace(config.batch, **_without_none({"recursive": recursive}))
     return CutcapConfig(
         transcription=transcription,
         caption=caption,
         render=render,
-        batch=config.batch,
+        batch=batch,
         output=output if output is not None else config.output,
     )
 
 
 def _without_none(values: dict[str, object | None]) -> dict[str, object]:
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _print_planned_jobs(jobs: list[VideoJob]) -> None:
+    table = Table(title=f"Planned caption jobs ({len(jobs)})")
+    table.add_column("Input")
+    table.add_column("SRT")
+    table.add_column("ASS")
+    table.add_column("JSON")
+    table.add_column("Captioned video")
+
+    for job in jobs:
+        table.add_row(
+            str(job.source),
+            str(job.srt_path),
+            str(job.ass_path),
+            str(job.json_path),
+            str(job.rendered_path),
+        )
+
+    console.print(table)

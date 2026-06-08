@@ -8,12 +8,13 @@ from pathlib import Path
 from cutcaption.chunking import chunk_words
 from cutcaption.config import CutcaptionConfig
 from cutcaption.exporters.ass import render_ass
+from cutcaption.exporters.json import render_json
 from cutcaption.exporters.srt import render_srt
 from cutcaption.models import VideoJob
 from cutcaption.render import burn_subtitles
 from cutcaption.styles import get_style
 from cutcaption.transcribe import FasterWhisperTranscriber
-from cutcaption.utils.paths import build_video_job, default_output_dir, discover_videos
+from cutcaption.utils.paths import build_video_job, discover_inputs, folder_output_dir
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,8 +30,8 @@ class CaptionPipeline:
         self._transcriber = transcriber or FasterWhisperTranscriber()
 
     def plan(self, input_path: Path, config: CutcaptionConfig) -> list[VideoJob]:
-        videos = discover_videos(input_path)
-        output_dir = config.output or default_output_dir(input_path, videos)
+        videos = discover_inputs(input_path, recursive=config.batch.recursive)
+        output_dir = folder_output_dir(input_path, config.output)
         return [build_video_job(video, output_dir) for video in videos]
 
     def run(self, input_path: Path, config: CutcaptionConfig) -> list[PipelineResult]:
@@ -55,6 +56,9 @@ class CaptionPipeline:
             if config.write_ass or config.burn:
                 job.ass_path.write_text(render_ass(captions, style), encoding="utf-8")
                 wrote_ass = True
+
+            if config.write_json:
+                job.json_path.write_text(render_json(captions), encoding="utf-8")
 
             if config.burn:
                 burn_subtitles(job.source, job.ass_path, job.rendered_path)

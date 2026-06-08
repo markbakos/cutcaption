@@ -24,11 +24,29 @@ class Caption:
 
 
 @dataclass(frozen=True, slots=True)
+class OutputPaths:
+    srt_path: Path
+    ass_path: Path
+    json_path: Path
+    captioned_video_path: Path
+
+
+@dataclass(frozen=True, slots=True)
 class VideoJob:
     source: Path
     srt_path: Path
     ass_path: Path
+    json_path: Path
     rendered_path: Path
+
+    @property
+    def output_paths(self) -> OutputPaths:
+        return OutputPaths(
+            srt_path=self.srt_path,
+            ass_path=self.ass_path,
+            json_path=self.json_path,
+            captioned_video_path=self.rendered_path,
+        )
 
 
 @dataclass(frozen=True, slots=True)
