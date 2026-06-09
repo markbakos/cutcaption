@@ -10,10 +10,22 @@ VIDEO_EXTENSIONS = frozenset({".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"})
 
 
 @dataclass(frozen=True, slots=True)
-class WordTiming:
+class Word:
     text: str
     start: float
     end: float
+    probability: float | None = None
+
+
+WordTiming = Word
+
+
+@dataclass(frozen=True, slots=True)
+class Segment:
+    text: str
+    start: float
+    end: float
+    words: list[Word]
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,5 +63,12 @@ class VideoJob:
 
 @dataclass(frozen=True, slots=True)
 class Transcript:
-    words: tuple[WordTiming, ...]
     language: str | None = None
+    duration: float | None = None
+    segments: list[Segment] | None = None
+
+    @property
+    def words(self) -> tuple[Word, ...]:
+        if self.segments is None:
+            return ()
+        return tuple(word for segment in self.segments for word in segment.words)
