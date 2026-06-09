@@ -102,6 +102,8 @@ def caption(
     _ = version
     if ctx.invoked_subcommand is not None:
         return
+    if _dispatch_builtin_command(input_path):
+        return
     if input_path is None:
         console.print(ctx.get_help())
         raise typer.Exit()
@@ -223,6 +225,26 @@ def preview() -> None:
 
 def main() -> None:
     app()
+
+
+def _dispatch_builtin_command(input_path: Path | None) -> bool:
+    if input_path is None:
+        return False
+
+    command = str(input_path)
+    if command == "doctor":
+        doctor()
+        return True
+    if command == "styles":
+        list_styles()
+        return True
+    if command == "init":
+        init()
+        return True
+    if command == "preview":
+        preview()
+        return True
+    return False
 
 
 def _apply_cli_overrides(
