@@ -57,7 +57,9 @@ def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
 
     if result.returncode != 0:
         stderr = result.stderr.strip() or "No stderr output."
-        raise FfmpegCommandError(f"{command[0]} failed with exit code {result.returncode}: {stderr}")
+        raise FfmpegCommandError(
+            f"{command[0]} failed with exit code {result.returncode}: {stderr}"
+        )
     return result
 
 

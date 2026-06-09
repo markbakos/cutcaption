@@ -7,7 +7,12 @@ from unittest.mock import Mock
 import pytest
 
 from cutcaption.utils import ffmpeg
-from cutcaption.utils.ffmpeg import FfmpegCommandError, FfmpegNotFoundError, probe_media, run_command
+from cutcaption.utils.ffmpeg import (
+    FfmpegCommandError,
+    FfmpegNotFoundError,
+    probe_media,
+    run_command,
+)
 
 
 def test_check_ffmpeg_and_ffprobe_use_path_lookup(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -140,7 +140,12 @@ def test_process_batch_continues_after_per_file_failure(
     def fake_process(input_path: Path, paths: OutputPaths, config: CutcapConfig) -> JobResult:
         _ = paths, config
         if input_path == first:
-            return JobResult(input_path=input_path, success=False, outputs_written=[], error_message="failed")
+            return JobResult(
+                input_path=input_path,
+                success=False,
+                outputs_written=[],
+                error_message="failed",
+            )
         return JobResult(input_path=input_path, success=True, outputs_written=[])
 
     monkeypatch.setattr("cutcaption.pipeline.process_video", fake_process)

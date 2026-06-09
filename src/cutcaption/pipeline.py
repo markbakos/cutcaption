@@ -13,7 +13,12 @@ from cutcaption.models import BatchResult, JobResult, OutputPaths, VideoJob
 from cutcaption.render import OutputExistsError, burn_subtitles
 from cutcaption.styles import get_style
 from cutcaption.transcribe import FasterWhisperTranscriber
-from cutcaption.utils.paths import build_output_paths, build_video_job, discover_inputs, folder_output_dir
+from cutcaption.utils.paths import (
+    build_output_paths,
+    build_video_job,
+    discover_inputs,
+    folder_output_dir,
+)
 
 
 def process_video(
