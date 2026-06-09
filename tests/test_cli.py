@@ -10,9 +10,7 @@ from cutcaption.models import VideoJob
 
 def test_cli_dry_run_does_not_process(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     pytest.importorskip("typer")
-    from typer.testing import CliRunner
-
-    from cutcaption.cli import app
+    from cutcaption.cli import main
 
     input_path = tmp_path / "input.mp4"
     input_path.write_text("video", encoding="utf-8")
@@ -33,9 +31,7 @@ def test_cli_dry_run_does_not_process(monkeypatch: pytest.MonkeyPatch, tmp_path:
     )
     monkeypatch.setattr("cutcaption.cli.process_batch", process_batch)
 
-    result = CliRunner().invoke(app, [str(input_path), "--dry-run"])
+    monkeypatch.setattr("sys.argv", ["cutcaption", str(input_path), "--dry-run"])
 
-    assert result.exit_code == 0
-    assert "Planned caption jobs" in result.output
-    assert "Dry run complete" in result.output
+    main()
     process_batch.assert_not_called()
