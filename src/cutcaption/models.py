@@ -45,6 +45,25 @@ class OutputPaths:
 
 
 @dataclass(frozen=True, slots=True)
+class JobResult:
+    input_path: Path
+    success: bool
+    outputs_written: list[Path]
+    skipped: bool = False
+    error_message: str | None = None
+    duration: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class BatchResult:
+    total: int
+    succeeded: int
+    failed: int
+    skipped: int
+    results: list[JobResult]
+
+
+@dataclass(frozen=True, slots=True)
 class VideoJob:
     source: Path
     srt_path: Path
