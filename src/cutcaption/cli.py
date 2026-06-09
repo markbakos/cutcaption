@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import replace
 from pathlib import Path
 from typing import Annotated
@@ -32,9 +33,7 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback(invoke_without_command=True)
 def caption(
-    ctx: typer.Context,
     input_path: Annotated[
         Path | None,
         typer.Argument(help="Video file or folder to caption."),
@@ -100,12 +99,8 @@ def caption(
     ] = False,
 ) -> None:
     _ = version
-    if ctx.invoked_subcommand is not None:
-        return
-    if _dispatch_builtin_command(input_path):
-        return
     if input_path is None:
-        console.print(ctx.get_help())
+        console.print("Usage: cutcaption INPUT [OPTIONS]\n\nRun `cutcaption --help` for options.")
         raise typer.Exit()
 
     try:
@@ -224,27 +219,11 @@ def preview() -> None:
 
 
 def main() -> None:
-    app()
-
-
-def _dispatch_builtin_command(input_path: Path | None) -> bool:
-    if input_path is None:
-        return False
-
-    command = str(input_path)
-    if command == "doctor":
-        doctor()
-        return True
-    if command == "styles":
-        list_styles()
-        return True
-    if command == "init":
-        init()
-        return True
-    if command == "preview":
-        preview()
-        return True
-    return False
+    args = sys.argv[1:]
+    if args and args[0] in {"doctor", "styles", "init", "preview"}:
+        app(args=args)
+        return
+    typer.run(caption)
 
 
 def _apply_cli_overrides(
