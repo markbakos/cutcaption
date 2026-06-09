@@ -33,5 +33,8 @@ def test_cli_dry_run_does_not_process(monkeypatch: pytest.MonkeyPatch, tmp_path:
 
     monkeypatch.setattr("sys.argv", ["cutcaption", str(input_path), "--dry-run"])
 
-    main()
+    with pytest.raises(SystemExit) as exc_info:
+        main()
+
+    assert exc_info.value.code == 0
     process_batch.assert_not_called()
