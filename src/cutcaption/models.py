@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
 VIDEO_EXTENSIONS = frozenset({".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"})
 
 
