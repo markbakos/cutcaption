@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from cutcaption.chunking import chunk_words
+from cutcaption.chunking import build_captions
 from cutcaption.config import CutcaptionConfig
 from cutcaption.exporters.ass import render_ass
 from cutcaption.exporters.json import render_json
@@ -39,10 +39,7 @@ class CaptionPipeline:
         for job in self.plan(input_path, config):
             job.srt_path.parent.mkdir(parents=True, exist_ok=True)
             transcript = self._transcriber.transcribe(job.source, config)
-            captions = chunk_words(
-                transcript.words,
-                max_words=config.caption.max_words,
-            )
+            captions = build_captions(transcript, config.caption)
             style = get_style(config.style)
 
             wrote_srt = False

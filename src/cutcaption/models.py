@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -33,6 +33,7 @@ class Caption:
     text: str
     start: float
     end: float
+    words: list[Word] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
