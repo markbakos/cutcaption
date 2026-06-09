@@ -33,5 +33,5 @@ def test_write_ass_creates_style_and_dialogue_file(tmp_path: Path) -> None:
 
     output = path.read_text(encoding="utf-8")
     assert "[V4+ Styles]" in output
-    assert "Style: Default,Arial,82" in output
+    assert "Style: Default,Arial,88" in output
     assert "Dialogue: 0,0:00:00.00,0:00:01.20,Default" in output

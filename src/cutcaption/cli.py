@@ -16,7 +16,7 @@ from cutcaption.config import CutcapConfig, load_config, write_default_config
 from cutcaption.doctor import DoctorCheck, has_critical_failures, run_doctor_checks
 from cutcaption.models import VideoJob
 from cutcaption.pipeline import CaptionPipeline
-from cutcaption.styles import STYLES
+from cutcaption.styles import list_styles as available_styles
 
 app = typer.Typer(
     add_completion=False,
@@ -145,10 +145,18 @@ def list_styles() -> None:
 
     table = Table(title="Caption styles")
     table.add_column("Name")
-    table.add_column("Font")
-    table.add_column("Size")
-    for style in STYLES.values():
-        table.add_row(style.name, style.font_name, str(style.font_size))
+    table.add_column("Description")
+    table.add_column("Uppercase")
+    table.add_column("Font size")
+    table.add_column("Box")
+    for style in available_styles():
+        table.add_row(
+            style.name,
+            style.description,
+            "yes" if style.uppercase else "no",
+            str(style.font_size),
+            "yes" if style.box else "no",
+        )
     console.print(table)
 
 

@@ -5,25 +5,23 @@ from __future__ import annotations
 from pathlib import Path
 
 from cutcaption.config import RenderConfig
-from cutcaption.models import Caption
+from cutcaption.models import Caption, Word
 from cutcaption.styles import CaptionStyle, StyleConfig
 
 PLAY_RES_X = 1080
 PLAY_RES_Y = 1920
-BOTTOM_CENTER_ALIGNMENT = 2
 MARGIN_L = 80
 MARGIN_R = 80
-MARGIN_V = 180
 
 
 def render_ass(captions: list[Caption] | tuple[Caption, ...], style: CaptionStyle) -> str:
     events = [
         "Dialogue: 0,"
-        f"{_ass_timestamp(caption.start)},{_ass_timestamp(caption.end)},Default,,0,0,0,,"
-        f"{_escape_ass(caption.text)}"
-        for caption in captions
+        f"{_ass_timestamp(start)},{_ass_timestamp(end)},Default,,0,0,0,,"
+        f"{_escape_ass(_style_text(text, style))}"
+        for text, start, end in _iter_events(captions, style)
     ]
-    border_style = 3 if style.boxed else 1
+    border_style = 3 if style.box else 1
 
     return (
         "\n".join(
@@ -42,9 +40,9 @@ def render_ass(captions: list[Caption] | tuple[Caption, ...], style: CaptionStyl
                 "MarginL, MarginR, MarginV, Encoding",
                 f"Style: Default,{style.font_name},{style.font_size},{style.primary_color},"
                 f"{style.primary_color},{style.outline_color},{style.back_color},"
-                f"{-1 if style.bold else 0},0,0,0,100,100,0,0,{border_style},"
-                f"{style.outline},{style.shadow},{BOTTOM_CENTER_ALIGNMENT},"
-                f"{MARGIN_L},{MARGIN_R},{MARGIN_V},1",
+                f"{-1 if style.bold else 0},{-1 if style.italic else 0},0,0,100,100,0,0,"
+                f"{border_style},{style.outline_width},{style.shadow},{style.alignment},"
+                f"{MARGIN_L},{MARGIN_R},{style.margin_v},1",
                 "",
                 "[Events]",
                 "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -64,6 +62,27 @@ def write_ass(
     del render
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_ass(captions, style), encoding="utf-8")
+
+
+def _iter_events(
+    captions: list[Caption] | tuple[Caption, ...],
+    style: CaptionStyle,
+) -> list[tuple[str, float, float]]:
+    events: list[tuple[str, float, float]] = []
+    for caption in captions:
+        if style.one_word_at_a_time and caption.words:
+            events.extend(_word_events(caption.words))
+        else:
+            events.append((caption.text, caption.start, caption.end))
+    return events
+
+
+def _word_events(words: list[Word]) -> list[tuple[str, float, float]]:
+    return [(word.text, word.start, word.end) for word in words]
+
+
+def _style_text(text: str, style: CaptionStyle) -> str:
+    return text.upper() if style.uppercase else text
 
 
 def _ass_timestamp(seconds: float) -> str:

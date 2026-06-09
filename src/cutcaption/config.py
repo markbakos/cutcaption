@@ -12,11 +12,11 @@ except ModuleNotFoundError:  # pragma: no cover - covered on Python 3.10 only
     import tomli as tomllib
 
 CaptionPreset = Literal["shorts", "youtube", "podcast", "default"]
-CaptionStyleName = Literal["clean", "bold", "pop", "minimal", "boxed"]
+CaptionStyleName = Literal["clean", "bold", "pop", "minimal", "boxed", "shorts"]
 ProcessingMode = Literal["fast", "balanced", "accurate"]
 
 BUILT_IN_PRESETS = frozenset({"shorts", "youtube", "podcast", "default"})
-BUILT_IN_STYLES = frozenset({"clean", "bold", "pop", "minimal", "boxed"})
+BUILT_IN_STYLES = frozenset({"clean", "bold", "pop", "minimal", "boxed", "shorts"})
 PROCESSING_MODES = frozenset({"fast", "balanced", "accurate"})
 
 
