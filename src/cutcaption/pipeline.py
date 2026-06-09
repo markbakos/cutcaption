@@ -7,9 +7,9 @@ from pathlib import Path
 
 from cutcaption.chunking import build_captions
 from cutcaption.config import CutcaptionConfig
-from cutcaption.exporters.ass import render_ass
-from cutcaption.exporters.json import render_json
-from cutcaption.exporters.srt import render_srt
+from cutcaption.exporters.ass import write_ass
+from cutcaption.exporters.json import write_json
+from cutcaption.exporters.srt import write_srt
 from cutcaption.models import VideoJob
 from cutcaption.render import burn_subtitles
 from cutcaption.styles import get_style
@@ -47,15 +47,15 @@ class CaptionPipeline:
             rendered = False
 
             if config.write_srt:
-                job.srt_path.write_text(render_srt(captions), encoding="utf-8")
+                write_srt(captions, job.srt_path)
                 wrote_srt = True
 
             if config.write_ass or config.burn:
-                job.ass_path.write_text(render_ass(captions, style), encoding="utf-8")
+                write_ass(captions, job.ass_path, style, config.render)
                 wrote_ass = True
 
             if config.write_json:
-                job.json_path.write_text(render_json(captions), encoding="utf-8")
+                write_json(transcript, captions, job.json_path)
 
             if config.burn:
                 burn_subtitles(job.source, job.ass_path, job.rendered_path)

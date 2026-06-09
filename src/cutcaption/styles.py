@@ -21,6 +21,9 @@ class CaptionStyle:
     boxed: bool = False
 
 
+StyleConfig = CaptionStyle
+
+
 STYLES: dict[CaptionStyleName, CaptionStyle] = {
     "clean": CaptionStyle(
         "clean", "Arial", 72, "&H00FFFFFF", "&H00000000", "&H80000000", True, 5, 0
